@@ -26,7 +26,15 @@ const User = mongoose.model('User', userSchema);
 app.post('/api/register', async (req, res) => {
   try {
     const { username, email, password } = req.body;
-    // Rest of the registration logic...
+    const existingUser = await User.findOne({ $or: [{ username }, { email }] });
+    if (existingUser) {
+      return res.status(400).json({ error: 'Username or email already exists' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = new User({ username, email, password: hashedPassword });
+    await newUser.save();
+    res.json({ message: 'User registered' });
   } catch (error) {
     res.status(500).json({ error: 'Registration failed' });
   }
